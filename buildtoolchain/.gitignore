@@ -1,0 +1,12 @@
+*.tar.bz2
+binutils*/
+gcc*/
+build_binutils
+build_gcc
+usr/
+armeb-eabi/
+bin/
+info/
+lib/
+man/
+share/
