@@ -19,7 +19,7 @@ GMP_URI="http://ftp.gnu.org/gnu/gmp/$GMP_TARBALL"
 MPFR_VER=2.4.2
 MPFR_DIR="mpfr-$MPFR_VER"
 MPFR_TARBALL="mpfr-$MPFR_VER.tar.bz2"
-MPFR_URI="http://www.mpfr.org/mpfr-current/$MPFR_TARBALL"
+MPFR_URI="http://www.mpfr.org/mpfr-$MPFR_VER/$MPFR_TARBALL"
 
 GCC_VER=4.4.0
 GCC_DIR="gcc-$GCC_VER"
