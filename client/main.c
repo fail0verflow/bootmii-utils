@@ -1,6 +1,5 @@
 /*
  *  Copyright (C) 2008 dhewg, #wiidev efnet
- *  Copyright (C) 2009 John Kelley <wiidev@kelley.ca>
  *
  *  this file is part of geckoloader
  *  http://wiibrew.org/index.php?title=Geckoloader
@@ -30,25 +29,17 @@
 #include <errno.h>
 
 #include "gecko.h"
-#include "elf_abi.h"
 
 #ifndef O_BINARY
 #define O_BINARY 0
 #endif
 
-#define BOOTMII_CLIENT_VERSION "v0.2"
+#define BOOTMII_CLIENT_VERSION "v0.1"
 #define MAX_BINARY_SIZE (20 * 1024 *1024)
 
 #define CMD_NONE 0
 #define CMD_UPLOAD_ARM 1
 #define CMD_UPLOAD_PPC 2
-
-const int endian = 1;
-
-#define SWAB16(x) \
-	(*(char *)&endian == 1) \
-	? (((x) << 8) & 0xFF00) | (x) >> 8 \
-	: x
 
 const char *envvar = "USBGECKODEVICE";
 
@@ -63,7 +54,9 @@ char *default_tty = NULL;
 #endif
 
 void usage(const char *appname) {
-	fprintf(stderr, "usage: %s <file>\n", appname);
+	fprintf(stderr, "usage: %s <command> <file>\n", appname);
+	fprintf(stderr, "commands: -a: upload ARM binary\n");
+	fprintf(stderr, "          -p: upload PPC binary\n");
 	exit(EXIT_FAILURE);
 }
 
@@ -74,7 +67,6 @@ int main(int argc, char **argv) {
 	unsigned char buf4[4];
 	unsigned char *buf, *p;
 	off_t fsize, block;
-	Elf32_Ehdr *hdr;
 
 	printf("bootmii client " BOOTMII_CLIENT_VERSION "\n"
 			"coded by dhewg, #wiidev efnet\n\n");
@@ -83,6 +75,13 @@ int main(int argc, char **argv) {
 		usage(argv[0]);
 
 	cmd = CMD_NONE;
+	if (!strcmp(argv[1], "-a"))
+		cmd = CMD_UPLOAD_ARM;
+	else if (!strcmp(argv[1], "-p"))
+		cmd = CMD_UPLOAD_PPC;
+
+	if (cmd == CMD_NONE)
+		usage(argv[0]);
 
 	tty = getenv(envvar);
 	if (!tty)
@@ -105,9 +104,9 @@ int main(int argc, char **argv) {
 
 	printf("using %s\n", tty);
 
-	fd = open(argv[1], O_RDONLY | O_BINARY);
+	fd = open(argv[2], O_RDONLY | O_BINARY);
 	if (fd < 0) {
-		perror("error opening the file");
+		perror("error opening the device");
 		exit(EXIT_FAILURE);
 	}
 
@@ -139,24 +138,6 @@ int main(int argc, char **argv) {
 	}
 	close (fd);
 
-	hdr = (Elf32_Ehdr *)buf;
-	if (!IS_ELF(*hdr)) {
-		fprintf(stderr, "File is not an ELF image!\n");
-		exit(EXIT_FAILURE);
-	}
-
-	switch(SWAB16(hdr->e_machine)) {
-	case EM_ARM:
-		cmd = CMD_UPLOAD_ARM;
-		break;
-	case EM_PPC:
-		cmd = CMD_UPLOAD_PPC;
-		break;
-	default:
-		fprintf(stderr, "Incompatible ELF Machine type 0x%04X\n", hdr->e_machine);
-		exit(EXIT_FAILURE);
-	};
-	
 	if (gecko_open(tty)) {
 		free(buf);
 		fprintf(stderr, "unable to open the device\n");
