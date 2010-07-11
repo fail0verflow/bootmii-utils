@@ -63,7 +63,7 @@ void usage(const char *appname) {
 int main(int argc, char **argv) {
 	int cmd, fd;
 	struct stat st;
-	char *tty;
+	char *tty = NULL;
 	unsigned char buf4[4];
 	unsigned char *buf, *p;
 	off_t fsize, block;
@@ -82,7 +82,8 @@ int main(int argc, char **argv) {
 
 	if (cmd == CMD_NONE)
 		usage(argv[0]);
-
+	
+#ifndef USE_LIBFTDI
 	tty = getenv(envvar);
 	if (!tty)
 		tty = default_tty;
@@ -92,17 +93,18 @@ int main(int argc, char **argv) {
 
 	if (!tty) {
 		fprintf(stderr, "please set the environment variable %s to "
-			 "your usbgecko "
+				"your usbgecko "
 #ifndef __WIN32__
-			 "tty device (eg \"/dev/ttyUSB0\")"
+				"tty device (eg \"/dev/ttyUSB0\")"
 #else
-			 "COM port (eg \"COM3\")"
+				"COM port (eg \"COM3\")"
 #endif
-			 "\n", envvar);
+				"\n", envvar);
 		exit(EXIT_FAILURE);
 	}
 
 	printf("using %s\n", tty);
+#endif
 
 	fd = open(argv[2], O_RDONLY | O_BINARY);
 	if (fd < 0) {

@@ -25,24 +25,49 @@
 #include <fcntl.h>
 #include <errno.h>
 
+#ifdef USE_LIBFTDI
+#include "ftdi.h"
+#else
 #ifndef __WIN32__
 #include <termios.h>
 #else
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #endif
+#endif
 
 #include "gecko.h"
 
 #define FTDI_PACKET_SIZE 3968
 
+#ifdef USE_LIBFTDI
+#define DEFAULT_FTDI_VID 0x0403
+#define DEFAULT_FTDI_PID 0x6001
+
+struct ftdi_context ftdi_ctx;
+#else
 #ifndef __WIN32__
 static int fd_gecko = -1;
 #else
 static HANDLE handle_gecko = NULL;
 #endif
+#endif
 
 int gecko_open(const char *dev) {
+#ifdef USE_LIBFTDI
+	(void) dev;
+
+	int err;
+
+	ftdi_init(&ftdi_ctx);
+
+	err = ftdi_usb_open(&ftdi_ctx, DEFAULT_FTDI_VID, DEFAULT_FTDI_PID);
+	if (err < 0) {
+		fprintf(stderr, "ftdi_usb_open_desc failed: %d (%s)\n",
+				err, ftdi_get_error_string(&ftdi_ctx));
+		return 1;
+	}
+#else
 #ifndef __WIN32__
 	struct termios newtio;
 
@@ -95,6 +120,7 @@ int gecko_open(const char *dev) {
 		return 1;
 	}
 #endif
+#endif
 
 	gecko_flush();
 
@@ -102,28 +128,35 @@ int gecko_open(const char *dev) {
 }
 
 void gecko_close() {
+#ifdef USE_LIBFTDI
+	ftdi_usb_close(&ftdi_ctx);
+#else
 #ifndef __WIN32__
 	if (fd_gecko > 0)
 		close(fd_gecko);
 #else
 	CloseHandle(handle_gecko);
 #endif
+#endif
 }
 
 void gecko_flush() {
+#ifdef USE_LIBFTDI
+	ftdi_usb_purge_buffers(&ftdi_ctx);
+#else
 #ifndef __WIN32__
 	tcflush(fd_gecko, TCIOFLUSH);
 #else
 	PurgeComm(handle_gecko, PURGE_RXCLEAR | PURGE_TXCLEAR |
 				PURGE_TXABORT | PURGE_RXABORT);
-
+#endif
 #endif
 }
 
 int gecko_read(void *buf, size_t count) {
 	size_t left, chunk;
 #ifndef __WIN32__
-	size_t res;
+	ssize_t res;
 #else
 	DWORD res;
 #endif
@@ -133,7 +166,14 @@ int gecko_read(void *buf, size_t count) {
 		chunk = left;
 		if (chunk > FTDI_PACKET_SIZE)
 			chunk = FTDI_PACKET_SIZE;
-
+#ifdef USE_LIBFTDI
+		res = ftdi_read_data(&ftdi_ctx, buf, chunk);
+		if (res < 1) {
+			fprintf(stderr, "ftdi_read_data failed: %d (%s)\n",
+					(int) res, ftdi_get_error_string(&ftdi_ctx));
+			return 1;
+		}
+#else
 #ifndef __WIN32__
 		res = read(fd_gecko, buf, chunk);
 		if (res < 1) {
@@ -146,6 +186,7 @@ int gecko_read(void *buf, size_t count) {
 			return 1;
 		}
 #endif
+#endif
 
 		left -= res;
 		buf += res;
@@ -157,7 +198,7 @@ int gecko_read(void *buf, size_t count) {
 int gecko_write(const void *buf, size_t count) {
 	size_t left, chunk;
 #ifndef __WIN32__
-	size_t res;
+	ssize_t res;
 #else
 	DWORD res;
 #endif
@@ -169,6 +210,14 @@ int gecko_write(const void *buf, size_t count) {
 		if (chunk > FTDI_PACKET_SIZE)
 			chunk = FTDI_PACKET_SIZE;
 
+#ifdef USE_LIBFTDI
+		res = ftdi_write_data(&ftdi_ctx, (unsigned char *)buf, chunk);
+		if (res < 1) {
+			fprintf(stderr, "ftdi_write_data failed: %d (%s)\n",
+					(int) res, ftdi_get_error_string(&ftdi_ctx));
+			return 1;
+		}
+#else
 #ifndef __WIN32__
 		res = write(fd_gecko, buf, count);
 		if (res < 1) {
@@ -181,11 +230,12 @@ int gecko_write(const void *buf, size_t count) {
 			return 1;
 		}
 #endif
+#endif
 
 		left -= res;
 		buf += res;
 
-#ifndef __WIN32__
+#if !defined(__WIN32__) && !defined(USE_LIBFTDI)
 		// does this work with ftdi-sio?
 		if (tcdrain(fd_gecko)) {
 			perror ("gecko_drain");
