@@ -5,23 +5,24 @@
 # Copyright (C) 2009 Andre Heider "dhewg" <dhewg@wiibrew.org>
 
 # Released under the terms of the GNU GPL, version 2
+SCRIPTDIR=`dirname $PWD/$0`
 
-BINUTILS_VER=2.19.1
+BINUTILS_VER=2.20
 BINUTILS_DIR="binutils-$BINUTILS_VER"
 BINUTILS_TARBALL="binutils-$BINUTILS_VER.tar.bz2"
 BINUTILS_URI="http://ftp.gnu.org/gnu/binutils/$BINUTILS_TARBALL"
 
-GMP_VER=4.2.4
+GMP_VER=5.0.1
 GMP_DIR="gmp-$GMP_VER"
 GMP_TARBALL="gmp-$GMP_VER.tar.bz2"
 GMP_URI="http://ftp.gnu.org/gnu/gmp/$GMP_TARBALL"
 
-MPFR_VER=2.4.2
+MPFR_VER=3.0.0
 MPFR_DIR="mpfr-$MPFR_VER"
 MPFR_TARBALL="mpfr-$MPFR_VER.tar.bz2"
-MPFR_URI="http://www.mpfr.org/mpfr-$MPFR_VER/$MPFR_TARBALL"
+MPFR_URI="http://www.mpfr.org/mpfr-current/$MPFR_TARBALL"
 
-GCC_VER=4.4.0
+GCC_VER=4.4.4
 GCC_DIR="gcc-$GCC_VER"
 GCC_CORE_TARBALL="gcc-core-$GCC_VER.tar.bz2"
 GCC_CORE_URI="http://ftp.gnu.org/gnu/gcc/gcc-$GCC_VER/$GCC_CORE_TARBALL"
@@ -31,7 +32,9 @@ BUILDTYPE=$1
 ARM_TARGET=armeb-eabi
 POWERPC_TARGET=powerpc-elf
 
-MAKEOPTS=-j3
+if [ -z $MAKEOPTS ]; then
+	MAKEOPTS=-j3
+fi
 
 # End of configuration section.
 
@@ -64,7 +67,7 @@ download() {
 	DL=1
 	if [ -f "$WIIDEV/$2" ]; then
 		echo "Testing $2..."
-		tar tjf "$WIIDEV/$2" >/dev/null && DL=0
+		tar tjf "$WIIDEV/$2" >/dev/null 2>&1 && DL=0
 	fi
 
 	if [ $DL -eq 1 ]; then
@@ -89,7 +92,7 @@ buildbinutils() {
 		cd $WIIDEV/build_binutils && \
 		$WIIDEV/$BINUTILS_DIR/configure --target=$TARGET \
 			--prefix=$WIIDEV --disable-werror --disable-multilib && \
-		$MAKE $MAKEOPTS && \
+		nice $MAKE $MAKEOPTS && \
 		$MAKE install
 	) || die "Error building binutils for target $TARGET"
 }
@@ -105,7 +108,7 @@ buildgcc() {
 			--disable-libmudflap --disable-libssp --disable-libgomp \
 			--disable-decimal-float \
 			--enable-checking=release && \
-		$MAKE $MAKEOPTS && \
+		nice $MAKE $MAKEOPTS && \
 		$MAKE install
 	) || die "Error building binutils for target $TARGET"
 }
@@ -160,9 +163,15 @@ cleansrc
 extract "$BINUTILS_TARBALL" "$WIIDEV"
 extract "$GCC_CORE_TARBALL" "$WIIDEV"
 extract "$GMP_TARBALL" "$WIIDEV/$GCC_DIR"
-mv "$WIIDEV/$GCC_DIR/$GMP_DIR" "$WIIDEV/$GCC_DIR/gmp" || die "Error renaming $GMP_DIR -> gmp"
 extract "$MPFR_TARBALL" "$WIIDEV/$GCC_DIR"
+
+# in-tree gmp and mpfr
+mv "$WIIDEV/$GCC_DIR/$GMP_DIR" "$WIIDEV/$GCC_DIR/gmp" || die "Error renaming $GMP_DIR -> gmp"
 mv "$WIIDEV/$GCC_DIR/$MPFR_DIR" "$WIIDEV/$GCC_DIR/mpfr" || die "Error renaming $MPFR_DIR -> mpfr"
+
+# http://gcc.gnu.org/bugzilla/show_bug.cgi?id=42424
+# http://gcc.gnu.org/bugzilla/show_bug.cgi?id=44455
+patch -d $WIIDEV/$GCC_DIR -u -i $SCRIPTDIR/gcc.patch || die "Error applying gcc patch"
 
 case $BUILDTYPE in
 	arm)		buildarm ;;
