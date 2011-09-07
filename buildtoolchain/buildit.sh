@@ -110,7 +110,7 @@ buildgcc() {
 			--enable-checking=release && \
 		nice $MAKE $MAKEOPTS && \
 		$MAKE install
-	) || die "Error building binutils for target $TARGET"
+	) || die "Error building gcc for target $TARGET"
 }
 
 buildarm() {
