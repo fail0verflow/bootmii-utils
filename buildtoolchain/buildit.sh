@@ -91,7 +91,8 @@ buildbinutils() {
 	(
 		cd $WIIDEV/build_binutils && \
 		$WIIDEV/$BINUTILS_DIR/configure --target=$TARGET \
-			--prefix=$WIIDEV --disable-werror --disable-multilib && \
+			--prefix=$WIIDEV --disable-nls --disable-werror \
+			--disable-multilib && \
 		nice $MAKE $MAKEOPTS && \
 		$MAKE install
 	) || die "Error building binutils for target $TARGET"
