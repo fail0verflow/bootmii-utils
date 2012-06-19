@@ -1,54 +1,67 @@
---- old-configure	2010-07-11 15:10:39.470057633 +0200
-+++ configure	2010-07-11 15:13:36.892556492 +0200
-@@ -4492,7 +4492,12 @@
- echo "${ECHO_T}$gcc_cv_prog_cmp_skip" >&6
- do_compare="$gcc_cv_prog_cmp_skip"
- 
-+lt_cv_objdir=.libs
-+objdir=$lt_cv_objdir
- 
-+cat >>confdefs.h <<_ACEOF
-+#define LT_OBJDIR "$lt_cv_objdir/"
-+_ACEOF
- 
- # Check for GMP and MPFR
- gmplibs="-lmpfr -lgmp"
-@@ -4542,7 +4547,7 @@
+From 37ca432506c69627cd91cc76717a1304bfaccabb Mon Sep 17 00:00:00 2001
+From: nickc <nickc@138bc75d-0d04-0410-961f-82ee72b054a4>
+Date: Wed, 9 May 2012 16:20:17 +0000
+Subject: [PATCH] 	PR bootstrap/50461
+ 	* configure.ac (mpfr-dir): When using in-tree MPFR sources
+ 	allow for the fact that from release v3.1.0 of MPFR the source
+ 	files were moved into a src sub-directory.
+ 	* configure: Regenerate.
+
+git-svn-id: svn+ssh://gcc.gnu.org/svn/gcc/trunk@187341 138bc75d-0d04-0410-961f-82ee72b054a4
+---
+ ChangeLog    |    9 +++++++++
+ configure    |   13 ++++++++++---
+ configure.ac |   13 ++++++++++---
+ 3 files changed, 29 insertions(+), 6 deletions(-)
+
+diff --git a/configure b/configure
+index faabb33..083f2ce 100755
+--- a/configure
++++ b/configure
+@@ -5204,9 +5204,16 @@ if test "x$with_mpfr_lib" != x; then
    gmplibs="-L$with_mpfr_lib $gmplibs"
  fi
  if test "x$with_mpfr$with_mpfr_include$with_mpfr_lib" = x && test -d ${srcdir}/mpfr; then
--  gmplibs='-L$$r/$(HOST_SUBDIR)/mpfr/.libs -L$$r/$(HOST_SUBDIR)/mpfr/_libs '"$gmplibs"
-+  gmplibs='-L$$r/$(HOST_SUBDIR)/mpfr/'"$lt_cv_objdir $gmplibs"
-   gmpinc='-I$$r/$(HOST_SUBDIR)/mpfr -I$$s/mpfr '"$gmpinc"
+-  gmplibs='-L$$r/$(HOST_SUBDIR)/mpfr/'"$lt_cv_objdir $gmplibs"
+-  gmpinc='-I$$r/$(HOST_SUBDIR)/mpfr -I$$s/mpfr '"$gmpinc"
+-  extra_mpc_mpfr_configure_flags='--with-mpfr-include=$$s/mpfr --with-mpfr-lib=$$r/$(HOST_SUBDIR)/mpfr/'"$lt_cv_objdir"
++  # MPFR v3.1.0 moved the sources into a src sub-directory.
++  if test -d ${srcdir}/mpfr/src; then
++    gmplibs='-L$$r/$(HOST_SUBDIR)/mpfr/src/'"$lt_cv_objdir $gmplibs"
++    gmpinc='-I$$r/$(HOST_SUBDIR)/mpfr/src -I$$s/mpfr/src '"$gmpinc"
++    extra_mpc_mpfr_configure_flags='--with-mpfr-include=$$s/mpfr/src --with-mpfr-lib=$$r/$(HOST_SUBDIR)/mpfr/src/'"$lt_cv_objdir"
++  else
++    gmplibs='-L$$r/$(HOST_SUBDIR)/mpfr/'"$lt_cv_objdir $gmplibs"
++    gmpinc='-I$$r/$(HOST_SUBDIR)/mpfr -I$$s/mpfr '"$gmpinc"
++    extra_mpc_mpfr_configure_flags='--with-mpfr-include=$$s/mpfr --with-mpfr-lib=$$r/$(HOST_SUBDIR)/mpfr/'"$lt_cv_objdir"
++  fi
    # Do not test the mpfr version.  Assume that it is sufficient, since
    # it is in the source tree, and the library has not been built yet
-@@ -4594,9 +4599,9 @@
-   gmplibs="-L$with_gmp_lib $gmplibs"
+   # but it would be included on the link line in the version check below
+diff --git a/configure.ac b/configure.ac
+index 0159f5e..378e9f5 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -1289,9 +1289,16 @@ if test "x$with_mpfr_lib" != x; then
+   gmplibs="-L$with_mpfr_lib $gmplibs"
  fi
- if test "x$with_gmp$with_gmp_include$with_gmp_lib" = x && test -d ${srcdir}/gmp; then
--  gmplibs='-L$$r/$(HOST_SUBDIR)/gmp/.libs -L$$r/$(HOST_SUBDIR)/gmp/_libs '"$gmplibs"
-+  gmplibs='-L$$r/$(HOST_SUBDIR)/gmp/'"$lt_cv_objdir $gmplibs"
-   gmpinc='-I$$r/$(HOST_SUBDIR)/gmp -I$$s/gmp '"$gmpinc"
--  extra_mpfr_configure_flags='--with-gmp-build=$$r/$(HOST_SUBDIR)/gmp'
-+  extra_mpfr_configure_flags='--with-gmp-include=$$r/$(HOST_SUBDIR)/gmp --with-gmp-lib=$$r/$(HOST_SUBDIR)/gmp/'"$lt_cv_objdir"
-   # Do not test the gmp version.  Assume that it is sufficient, since
+ if test "x$with_mpfr$with_mpfr_include$with_mpfr_lib" = x && test -d ${srcdir}/mpfr; then
+-  gmplibs='-L$$r/$(HOST_SUBDIR)/mpfr/'"$lt_cv_objdir $gmplibs"
+-  gmpinc='-I$$r/$(HOST_SUBDIR)/mpfr -I$$s/mpfr '"$gmpinc"
+-  extra_mpc_mpfr_configure_flags='--with-mpfr-include=$$s/mpfr --with-mpfr-lib=$$r/$(HOST_SUBDIR)/mpfr/'"$lt_cv_objdir"
++  # MPFR v3.1.0 moved the sources into a src sub-directory.
++  if test -d ${srcdir}/mpfr/src; then
++    gmplibs='-L$$r/$(HOST_SUBDIR)/mpfr/src/'"$lt_cv_objdir $gmplibs"
++    gmpinc='-I$$r/$(HOST_SUBDIR)/mpfr/src -I$$s/mpfr/src '"$gmpinc"
++    extra_mpc_mpfr_configure_flags='--with-mpfr-include=$$s/mpfr/src --with-mpfr-lib=$$r/$(HOST_SUBDIR)/mpfr/src/'"$lt_cv_objdir"
++  else
++    gmplibs='-L$$r/$(HOST_SUBDIR)/mpfr/'"$lt_cv_objdir $gmplibs"
++    gmpinc='-I$$r/$(HOST_SUBDIR)/mpfr -I$$s/mpfr '"$gmpinc"
++    extra_mpc_mpfr_configure_flags='--with-mpfr-include=$$s/mpfr --with-mpfr-lib=$$r/$(HOST_SUBDIR)/mpfr/'"$lt_cv_objdir"
++  fi
+   # Do not test the mpfr version.  Assume that it is sufficient, since
    # it is in the source tree, and the library has not been built yet
    # but it would be included on the link line in the version check below
-@@ -4871,7 +4876,7 @@
-   LIBS="$ppllibs $LIBS"
- fi
- if test "x$with_ppl$with_ppl_include$with_ppl_lib" = x && test -d ${srcdir}/ppl; then
--  ppllibs='-L$$r/$(HOST_SUBDIR)/ppl/.libs -L$$r/$(HOST_SUBDIR)/ppl/_libs -lppl_c -lppl -lgmpxx '"$with_host_libstdcxx "
-+  ppllibs='-L$$r/$(HOST_SUBDIR)/ppl/interfaces/C/'"$lt_cv_objdir"' -L$$r/$(HOST_SUBDIR)/ppl/src/'"$lt_cv_objdir"' -lppl_c -lppl -lgmpxx '
-   pplinc='-I$$r/$(HOST_SUBDIR)/ppl/include -I$$s/ppl/include '
-   LIBS="$ppllibs $LIBS"
- fi
-@@ -4990,7 +4995,7 @@
-   LIBS="$clooglibs $LIBS"
- fi
- if test "x$with_cloog$with_cloog_include$with_cloog_lib" = x && test -d ${srcdir}/cloog; then
--  clooglibs='-L$$r/$(HOST_SUBDIR)/cloog/.libs -L$$r/$(HOST_SUBDIR)/cloog/_libs -lcloog '
-+  clooglibs='-L$$r/$(HOST_SUBDIR)/cloog/'"$lt_cv_objdir"' -lcloog '
-   clooginc='-I$$r/$(HOST_SUBDIR)/cloog/include -I$$s/cloog/include -DCLOOG_PPL_BACKEND '
-   LIBS="$clooglibs $LIBS"
- fi
+-- 
+1.7.3.4
+

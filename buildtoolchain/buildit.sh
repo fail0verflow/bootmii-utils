@@ -7,25 +7,30 @@
 # Released under the terms of the GNU GPL, version 2
 SCRIPTDIR=`dirname $PWD/$0`
 
-BINUTILS_VER=2.20
+BINUTILS_VER=2.22
 BINUTILS_DIR="binutils-$BINUTILS_VER"
 BINUTILS_TARBALL="binutils-$BINUTILS_VER.tar.bz2"
 BINUTILS_URI="http://ftp.gnu.org/gnu/binutils/$BINUTILS_TARBALL"
 
-GMP_VER=5.0.1
+GMP_VER=5.0.5
 GMP_DIR="gmp-$GMP_VER"
 GMP_TARBALL="gmp-$GMP_VER.tar.bz2"
 GMP_URI="http://ftp.gnu.org/gnu/gmp/$GMP_TARBALL"
 
-MPFR_VER=3.0.0
+MPFR_VER=3.1.0
 MPFR_DIR="mpfr-$MPFR_VER"
 MPFR_TARBALL="mpfr-$MPFR_VER.tar.bz2"
-MPFR_URI="http://www.mpfr.org/mpfr-$MPFR_VER/$MPFR_TARBALL"
+MPFR_URI="http://ftp.gnu.org/gnu/mpfr/$MPFR_TARBALL"
 
-GCC_VER=4.4.4
+MPC_VER=0.9
+MPC_DIR="mpc-$MPC_VER"
+MPC_TARBALL="mpc-$MPC_VER.tar.gz"
+MPC_URI="http://www.multiprecision.org/mpc/download/$MPC_TARBALL"
+
+GCC_VER=4.7.1
 GCC_DIR="gcc-$GCC_VER"
-GCC_CORE_TARBALL="gcc-core-$GCC_VER.tar.bz2"
-GCC_CORE_URI="http://ftp.gnu.org/gnu/gcc/gcc-$GCC_VER/$GCC_CORE_TARBALL"
+GCC_TARBALL="gcc-$GCC_VER.tar.bz2"
+GCC_URI="http://ftp.gnu.org/gnu/gcc/gcc-$GCC_VER/$GCC_TARBALL"
 
 BUILDTYPE=$1
 
@@ -67,7 +72,7 @@ download() {
 	DL=1
 	if [ -f "$WIIDEV/$2" ]; then
 		echo "Testing $2..."
-		tar tjf "$WIIDEV/$2" >/dev/null 2>&1 && DL=0
+		tar tf "$WIIDEV/$2" >/dev/null 2>&1 && DL=0
 	fi
 
 	if [ $DL -eq 1 ]; then
@@ -78,7 +83,7 @@ download() {
 
 extract() {
 	echo "Extracting $1..."
-	tar xjf "$WIIDEV/$1" -C "$2" || die "Error unpacking $1"
+	tar xf "$WIIDEV/$1" -C "$2" || die "Error unpacking $1"
 }
 
 makedirs() {
@@ -157,21 +162,23 @@ fi
 download "$BINUTILS_URI" "$BINUTILS_TARBALL"
 download "$GMP_URI" "$GMP_TARBALL"
 download "$MPFR_URI" "$MPFR_TARBALL"
-download "$GCC_CORE_URI" "$GCC_CORE_TARBALL"
+download "$MPC_URI" "$MPC_TARBALL"
+download "$GCC_URI" "$GCC_TARBALL"
 
 cleansrc
 
 extract "$BINUTILS_TARBALL" "$WIIDEV"
-extract "$GCC_CORE_TARBALL" "$WIIDEV"
+extract "$GCC_TARBALL" "$WIIDEV"
 extract "$GMP_TARBALL" "$WIIDEV/$GCC_DIR"
 extract "$MPFR_TARBALL" "$WIIDEV/$GCC_DIR"
+extract "$MPC_TARBALL" "$WIIDEV/$GCC_DIR"
 
-# in-tree gmp and mpfr
+# in-tree gmp, mpfr and mpc
 mv "$WIIDEV/$GCC_DIR/$GMP_DIR" "$WIIDEV/$GCC_DIR/gmp" || die "Error renaming $GMP_DIR -> gmp"
 mv "$WIIDEV/$GCC_DIR/$MPFR_DIR" "$WIIDEV/$GCC_DIR/mpfr" || die "Error renaming $MPFR_DIR -> mpfr"
+mv "$WIIDEV/$GCC_DIR/$MPC_DIR" "$WIIDEV/$GCC_DIR/mpc" || die "Error renaming $MPC_DIR -> mpc"
 
-# http://gcc.gnu.org/bugzilla/show_bug.cgi?id=42424
-# http://gcc.gnu.org/bugzilla/show_bug.cgi?id=44455
+# http://gcc.gnu.org/git/?p=gcc.git;a=commitdiff;h=37ca432506c69627cd91cc76717a1304bfaccabb
 patch -d $WIIDEV/$GCC_DIR -u -i $SCRIPTDIR/gcc.patch || die "Error applying gcc patch"
 
 case $BUILDTYPE in
@@ -179,4 +186,3 @@ case $BUILDTYPE in
 	powerpc)	buildpowerpc ;;
 	both)		buildarm ; buildpowerpc; cleanbuild; cleansrc ;;
 esac
-
