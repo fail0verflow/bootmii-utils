@@ -7,25 +7,25 @@
 # Released under the terms of the GNU GPL, version 2
 SCRIPTDIR=`dirname $PWD/$0`
 
-BINUTILS_VER=2.20
+BINUTILS_VER=2.21.1
 BINUTILS_DIR="binutils-$BINUTILS_VER"
-BINUTILS_TARBALL="binutils-$BINUTILS_VER.tar.bz2"
+BINUTILS_TARBALL="binutils-${BINUTILS_VER}a.tar.bz2"
 BINUTILS_URI="http://ftp.gnu.org/gnu/binutils/$BINUTILS_TARBALL"
 
-GMP_VER=5.0.1
+GMP_VER=4.3.2
 GMP_DIR="gmp-$GMP_VER"
 GMP_TARBALL="gmp-$GMP_VER.tar.bz2"
 GMP_URI="http://ftp.gnu.org/gnu/gmp/$GMP_TARBALL"
 
-MPFR_VER=3.0.0
+MPFR_VER=2.4.2
 MPFR_DIR="mpfr-$MPFR_VER"
 MPFR_TARBALL="mpfr-$MPFR_VER.tar.bz2"
-MPFR_URI="http://www.mpfr.org/mpfr-$MPFR_VER/$MPFR_TARBALL"
+MPFR_URI="http://ftp.gnu.org/gnu/mpfr/$MPFR_TARBALL"
 
-GCC_VER=4.4.4
+GCC_VER=4.4.7
 GCC_DIR="gcc-$GCC_VER"
-GCC_CORE_TARBALL="gcc-core-$GCC_VER.tar.bz2"
-GCC_CORE_URI="http://ftp.gnu.org/gnu/gcc/gcc-$GCC_VER/$GCC_CORE_TARBALL"
+GCC_TARBALL="gcc-core-$GCC_VER.tar.bz2"
+GCC_URI="http://ftp.gnu.org/gnu/gcc/gcc-$GCC_VER/$GCC_TARBALL"
 
 BUILDTYPE=$1
 
@@ -67,7 +67,7 @@ download() {
 	DL=1
 	if [ -f "$WIIDEV/$2" ]; then
 		echo "Testing $2..."
-		tar tjf "$WIIDEV/$2" >/dev/null 2>&1 && DL=0
+		tar tf "$WIIDEV/$2" >/dev/null 2>&1 && DL=0
 	fi
 
 	if [ $DL -eq 1 ]; then
@@ -78,7 +78,7 @@ download() {
 
 extract() {
 	echo "Extracting $1..."
-	tar xjf "$WIIDEV/$1" -C "$2" || die "Error unpacking $1"
+	tar xf "$WIIDEV/$1" -C "$2" || die "Error unpacking $1"
 }
 
 makedirs() {
@@ -157,12 +157,12 @@ fi
 download "$BINUTILS_URI" "$BINUTILS_TARBALL"
 download "$GMP_URI" "$GMP_TARBALL"
 download "$MPFR_URI" "$MPFR_TARBALL"
-download "$GCC_CORE_URI" "$GCC_CORE_TARBALL"
+download "$GCC_URI" "$GCC_TARBALL"
 
 cleansrc
 
 extract "$BINUTILS_TARBALL" "$WIIDEV"
-extract "$GCC_CORE_TARBALL" "$WIIDEV"
+extract "$GCC_TARBALL" "$WIIDEV"
 extract "$GMP_TARBALL" "$WIIDEV/$GCC_DIR"
 extract "$MPFR_TARBALL" "$WIIDEV/$GCC_DIR"
 
@@ -170,13 +170,8 @@ extract "$MPFR_TARBALL" "$WIIDEV/$GCC_DIR"
 mv "$WIIDEV/$GCC_DIR/$GMP_DIR" "$WIIDEV/$GCC_DIR/gmp" || die "Error renaming $GMP_DIR -> gmp"
 mv "$WIIDEV/$GCC_DIR/$MPFR_DIR" "$WIIDEV/$GCC_DIR/mpfr" || die "Error renaming $MPFR_DIR -> mpfr"
 
-# http://gcc.gnu.org/bugzilla/show_bug.cgi?id=42424
-# http://gcc.gnu.org/bugzilla/show_bug.cgi?id=44455
-patch -d $WIIDEV/$GCC_DIR -u -i $SCRIPTDIR/gcc.patch || die "Error applying gcc patch"
-
 case $BUILDTYPE in
 	arm)		buildarm ;;
 	powerpc)	buildpowerpc ;;
 	both)		buildarm ; buildpowerpc; cleanbuild; cleansrc ;;
 esac
-
