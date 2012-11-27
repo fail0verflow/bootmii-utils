@@ -166,6 +166,9 @@ extract "$GCC_TARBALL" "$WIIDEV"
 extract "$GMP_TARBALL" "$WIIDEV/$GCC_DIR"
 extract "$MPFR_TARBALL" "$WIIDEV/$GCC_DIR"
 
+# http://sourceware.org/bugzilla/show_bug.cgi?id=12964
+patch -d $WIIDEV/$BINUTILS_DIR -u -p1 -i $SCRIPTDIR/binutils-2.21.1.patch || die "Error applying binutils patch"
+
 # in-tree gmp and mpfr
 mv "$WIIDEV/$GCC_DIR/$GMP_DIR" "$WIIDEV/$GCC_DIR/gmp" || die "Error renaming $GMP_DIR -> gmp"
 mv "$WIIDEV/$GCC_DIR/$MPFR_DIR" "$WIIDEV/$GCC_DIR/mpfr" || die "Error renaming $MPFR_DIR -> mpfr"
