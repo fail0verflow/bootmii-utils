@@ -108,7 +108,8 @@ buildgcc() {
 			--disable-nls --disable-threads --disable-shared \
 			--disable-libmudflap --disable-libssp --disable-libgomp \
 			--disable-decimal-float \
-			--enable-checking=release && \
+			--enable-checking=release \
+			CFLAGS='-fgnu89-inline -g -O2' && \
 		nice $MAKE $MAKEOPTS && \
 		$MAKE install
 	) || die "Error building gcc for target $TARGET"
