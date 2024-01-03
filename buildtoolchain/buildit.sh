@@ -8,29 +8,33 @@
 # Released under the terms of the GNU GPL, version 2
 SCRIPTDIR=`dirname $PWD/$0`
 
-BINUTILS_VER=2.21.1
+BINUTILS_VER=2.39
 BINUTILS_DIR="binutils-$BINUTILS_VER"
-BINUTILS_TARBALL="binutils-${BINUTILS_VER}a.tar.bz2"
+BINUTILS_TARBALL="binutils-${BINUTILS_VER}.tar.bz2"
 BINUTILS_URI="http://ftp.gnu.org/gnu/binutils/$BINUTILS_TARBALL"
 
-GMP_VER=4.3.2
+GMP_VER=6.2.1
 GMP_DIR="gmp-$GMP_VER"
 GMP_TARBALL="gmp-$GMP_VER.tar.bz2"
 GMP_URI="http://ftp.gnu.org/gnu/gmp/$GMP_TARBALL"
 
-MPFR_VER=2.4.2
+MPFR_VER=4.1.0
 MPFR_DIR="mpfr-$MPFR_VER"
 MPFR_TARBALL="mpfr-$MPFR_VER.tar.bz2"
 MPFR_URI="http://ftp.gnu.org/gnu/mpfr/$MPFR_TARBALL"
 
-GCC_VER=4.4.7
+MPC_VER=1.2.1
+MPC_DIR=mpc-$MPC_VER
+MPC_TARBALL="mpc-$MPC_VER.tar.gz"
+MPC_URI="http://ftp.gnu.org/gnu/mpc/$MPC_TARBALL"
+
+GCC_VER=11.3.0
 GCC_DIR="gcc-$GCC_VER"
-GCC_TARBALL="gcc-core-$GCC_VER.tar.bz2"
+GCC_TARBALL="gcc-$GCC_VER.tar.gz"
 GCC_URI="http://ftp.gnu.org/gnu/gcc/gcc-$GCC_VER/$GCC_TARBALL"
 
-
-ARM_TARGET=armeb-eabi
-POWERPC_TARGET=powerpc-elf
+ARM_TARGET=armeb-none-eabi
+POWERPC_TARGET=powerpc-none-elf
 
 if [ -z $MAKEOPTS ]; then
 	MAKEOPTS=-j3
@@ -86,6 +90,7 @@ prepsrc() {
 	download "$1/var/cache/$BINUTILS_TARBALL" "$BINUTILS_URI"
 	download "$1/var/cache/$GMP_TARBALL" "$GMP_URI"
 	download "$1/var/cache/$MPFR_TARBALL" "$MPFR_URI"
+	download "$1/var/cache/$MPC_TARBALL" "$MPC_URI"
 	download "$1/var/cache/$GCC_TARBALL" "$GCC_URI"
 
 	cleansrc "$1"
@@ -98,9 +103,8 @@ prepsrc() {
 	mv "$1/src/$GCC_DIR/$GMP_DIR" "$1/src/$GCC_DIR/gmp" || die "Error renaming $GMP_DIR -> gmp"
 	extract "$1/src/$GCC_DIR" "$1/var/cache/$MPFR_TARBALL"
 	mv "$1/src/$GCC_DIR/$MPFR_DIR" "$1/src/$GCC_DIR/mpfr" || die "Error renaming $MPFR_DIR -> mpfr"
-
-	# http://sourceware.org/bugzilla/show_bug.cgi?id=12964
-	patch -d $WIIDEV/$BINUTILS_DIR -u -p1 -i $SCRIPTDIR/binutils-2.21.1.patch || die "Error applying binutils patch"
+	extract "$1/src/$GCC_DIR" "$1/var/cache/$MPC_TARBALL"
+	mv "$1/src/$GCC_DIR/$MPC_DIR" "$1/src/$GCC_DIR/mpc" || die "Error renaming $MPC_DIR -> mpc"
 }
 
 buildbinutils() {
