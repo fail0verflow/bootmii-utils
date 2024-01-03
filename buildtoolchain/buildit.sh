@@ -64,7 +64,13 @@ download() {
 
 	if [ $DL -eq 1 ]; then
 		echo "Downloading $2..."
-		wget "$2" -c -O "$1" || die "Could not download $2"
+		if command -v wget >/dev/null 2>&1; then
+			wget "$2" -c -O "$1" || die "Could not download $2 using wget"
+		elif command -v curl >/dev/null 2>&1; then
+			curl -o "$1" -fL "$2" || die "Could not download $2 using cURL"
+		else
+			die "Could not download $2 (no wget or cURL)"
+		fi
 	fi
 }
 
