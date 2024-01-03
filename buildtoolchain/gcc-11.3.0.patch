@@ -1,0 +1,20 @@
+https://github.com/richfelker/musl-cross-make/issues/116#issuecomment-823612404
+
+diff -Nru gcc-11.3.0/gcc/config/host-darwin.c gcc-11.3.0-patched/gcc/config/host-darwin.c
+--- gcc-11.3.0/gcc/config/host-darwin.c	2022-04-21 09:58:52
++++ gcc-11.3.0-patched/gcc/config/host-darwin.c	2024-01-03 00:34:29
+@@ -22,6 +22,8 @@
+ #include "coretypes.h"
+ #include "diagnostic-core.h"
+ #include "config/host-darwin.h"
++#include "hosthooks.h"
++#include "hosthooks-def.h"
+ 
+ /* Yes, this is really supposed to work.  */
+ /* This allows for a pagesize of 16384, which we have on Darwin20, but should
+@@ -79,3 +81,5 @@
+ 
+   return ret;
+ }
++
++const struct host_hooks host_hooks = HOST_HOOKS_INITIALIZER;

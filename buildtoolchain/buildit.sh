@@ -105,6 +105,8 @@ prepsrc() {
 
 	extract "$1/src" "$1/var/cache/$BINUTILS_TARBALL"
 	extract "$1/src" "$1/var/cache/$GCC_TARBALL"
+	patch -d "$1"/src/gcc-* -u -p1 -i $SCRIPTDIR/gcc-11.3.0.patch || die "Error applying GCC patch"
+
 	extract "$1/src/$GCC_DIR" "$1/var/cache/$GMP_TARBALL"
 	mv "$1/src/$GCC_DIR/$GMP_DIR" "$1/src/$GCC_DIR/gmp" || die "Error renaming $GMP_DIR -> gmp"
 	extract "$1/src/$GCC_DIR" "$1/var/cache/$MPFR_TARBALL"
