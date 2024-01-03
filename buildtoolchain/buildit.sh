@@ -47,7 +47,7 @@ case `uname -s` in
 esac
 
 die() {
-	echo $@
+	echo "$@"
 	exit 1
 }
 
