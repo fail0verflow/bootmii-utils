@@ -2,7 +2,7 @@ ifeq ($(strip $(WIIDEV)),)
 $(error "Set WIIDEV in your environment.")
 endif
 
-PREFIX = $(WIIDEV)/bin/armeb-eabi-
+PREFIX = $(WIIDEV)/bin/armeb-none-eabi-
 
 CFLAGS = -mbig-endian -mcpu=arm926ej-s
 CFLAGS += -fomit-frame-pointer -ffunction-sections
